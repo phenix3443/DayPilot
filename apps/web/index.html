@@ -278,15 +278,33 @@
         function saveBlock() {
             if (selectedBlockIndex === null) return;
 
-            const title = document.getElementById('edit-title').value;
+            const title = document.getElementById('edit-title').value.trim();
             const start = document.getElementById('edit-start').value;
             const end = document.getElementById('edit-end').value;
 
+            // Validation
+            if (!title) {
+                alert('请输入标题');
+                return;
+            }
+            if (!start || !end) {
+                alert('请选择开始和结束时间');
+                return;
+            }
+
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+
+            if (endDate <= startDate) {
+                alert('结束时间必须晚于开始时间');
+                return;
+            }
+
             const block = scheduleData[selectedBlockIndex];
             block.title = title;
-            block.start = new Date(start).toISOString();
-            block.end = new Date(end).toISOString();
-            block.duration_minutes = Math.round((new Date(end) - new Date(start)) / 60000);
+            block.start = startDate.toISOString();
+            block.end = endDate.toISOString();
+            block.duration_minutes = Math.round((endDate - startDate) / 60000);
 
             closeModal();
             renderSchedule();
