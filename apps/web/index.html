@@ -195,8 +195,9 @@
 
                     const blockDiv = document.createElement('div');
                     blockDiv.className = 'timeline-block';
-                    blockDiv.style.left = `${80 + (startHour / 24) * (100 - 80 / container.offsetWidth * 100)}%`;
-                    blockDiv.style.width = `${(duration / 24) * (100 - 80 / container.offsetWidth * 100)}%`;
+                    const gridColumnStart = 2 + Math.floor(startHour);
+                    const gridColumnEnd = gridColumnStart + Math.ceil(duration);
+                    blockDiv.style.gridColumn = `${gridColumnStart} / ${gridColumnEnd}`;
                     blockDiv.textContent = block.title;
                     blockDiv.title = `${block.start} - ${block.end}`;
 
