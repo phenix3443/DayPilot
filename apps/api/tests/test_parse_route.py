@@ -7,8 +7,10 @@ client = TestClient(app)
 
 @pytest.mark.parametrize("text,expected_title,expected_duration,missing", [
     ("周五前完成路演PPT，大概3小时", "路演PPT", 180, []),
-    ("做方案", "做方案", 60, ["deadline", "duration_minutes"]),  # 无截止时间和时长 -> 两者都缺失
-    ("明天完成报告", "报告", 60, ["duration_minutes"]),  # 无时长 -> missing duration
+    ("做方案", "做方案", 60, ["deadline", "duration_minutes"]),
+    ("明天完成报告", "报告", 60, ["duration_minutes"]),
+    ("今天晚上花一个小时完成软件报告", "软件报告", 60, []),
+    ("1 个小时做PPT", "做PPT", 60, ["deadline"]),
 ])
 def test_parse_route_extracts_fields(text, expected_title, expected_duration, missing):
     r = client.post("/api/parse", json={"text": text})

@@ -4,9 +4,11 @@ from datetime import datetime, timedelta
 from app.schemas.task_parse import ParseResult
 
 _DURATION_PATTERNS = [
-    (re.compile(r"(\d+)\s*小时"), 60),
+    (re.compile(r"(\d+)\s*个?\s*小时"), 60),  # 支持 "1小时"、"1 小时"、"1个小时"、"1 个小时"
     (re.compile(r"(\d+)\s*分钟"), 1),
 ]
+
+_CN_NUM = {"一": 1, "两": 2, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
 
 _DEFAULT_DURATION_MINUTES = 60
 
@@ -44,6 +46,16 @@ def _extract_deadline(text: str) -> datetime | None:
 
 
 def _extract_duration_minutes(text: str) -> int | None:
+    # 先尝试匹配中文数字
+    for cn, num in _CN_NUM.items():
+        if f"{cn}个小时" in text or f"{cn}小时" in text:
+            return num * 60
+        if f"{cn}个半小时" in text:
+            return num * 60 + 30
+        if f"{cn}分钟" in text:
+            return num
+
+    # 再尝试阿拉伯数字
     for pattern, multiplier in _DURATION_PATTERNS:
         match = pattern.search(text)
         if match:
