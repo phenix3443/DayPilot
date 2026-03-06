@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
 from app.schemas.task_parse import ParseResult
-from app.services.task_parser import parse_task_text
+from app.services.task_parser_llm import parse_task_text
 
 MAX_CLARIFY_ROUNDS = 2
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from app.schemas.task_parse import ParseRequest, ParseResult
-from app.services.task_parser import parse_task_text
+from app.services.task_parser_llm import parse_task_text
 
 router = APIRouter(prefix="/api", tags=["parse"])
 
