@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DayPilot MVP</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        #chat { border: 1px solid #ccc; padding: 15px; min-height: 200px; margin-bottom: 15px; }
+        .message { margin: 10px 0; }
+        .user { color: #0066cc; }
+        .assistant { color: #666; }
+        input { width: 80%; padding: 8px; }
+        button { padding: 8px 15px; }
+        #schedule { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 15px; }
+        .block { background: #f0f0f0; padding: 8px; margin: 5px 0; border-radius: 4px; }
+        #view-controls button { padding: 8px 15px; margin-right: 5px; }
+        #view-controls button.active { background: #0066cc; color: white; }
+        .card-container { display: flex; flex-wrap: wrap; gap: 10px; }
+        .card { background: #f9f9f9; border: 1px solid #ddd; border-radius: 8px;
+                padding: 15px; width: 200px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card-title { font-weight: bold; margin-bottom: 8px; }
+        .card-time { color: #666; font-size: 14px; }
+        .timeline { position: relative; margin-top: 20px; }
+        .timeline-header { display: grid; grid-template-columns: 80px repeat(24, 1fr);
+                           border-bottom: 2px solid #333; padding-bottom: 5px; }
+        .timeline-hour { text-align: center; font-size: 12px; }
+        .timeline-row { display: grid; grid-template-columns: 80px repeat(24, 1fr);
+                        min-height: 60px; border-bottom: 1px solid #eee; position: relative; }
+        .timeline-date { padding: 10px; font-weight: bold; }
+        .timeline-block { background: #4CAF50; color: white;
+                          padding: 5px; border-radius: 4px; font-size: 12px;
+                          overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #detail-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; }
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                         background: rgba(0,0,0,0.5); }
+        .modal-content { position: relative; background: white; margin: 100px auto;
+                         padding: 20px; width: 400px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .modal-actions { margin-top: 20px; text-align: right; }
+        .btn-delete { background: #dc3545; color: white; padding: 8px 15px; border: none;
+                      border-radius: 4px; cursor: pointer; margin-right: 10px; }
+        .btn-close { background: #6c757d; color: white; padding: 8px 15px; border: none;
+                     border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>DayPilot MVP</h1>
+    <div id="chat"></div>
+    <input type="text" id="input" placeholder="输入任务，例如：周五前完成PPT，大概3小时">
+    <button onclick="sendMessage()">发送</button>
+    <div id="view-controls" style="display:none; margin-top: 20px;">
+        <button onclick="switchView('timeline')" id="btn-timeline">时间轴</button>
+        <button onclick="switchView('list')" id="btn-list" class="active">列表</button>
+        <button onclick="switchView('card')" id="btn-card">卡片</button>
+    </div>
+    <div id="schedule"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        const sessionId = 'web_' + Date.now();
+
+        function addMessage(text, type) {
+            const chat = document.getElementById('chat');
+            const msg = document.createElement('div');
+            msg.className = 'message ' + type;
+            msg.textContent = (type === 'user' ? '你: ' : 'AI: ') + text;
+            chat.appendChild(msg);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            addMessage(text, 'user');
+            input.value = '';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/intake`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, session_id: sessionId })
+                });
+                const data = await res.json();
+
+                if (data.action === 'ask') {
+                    addMessage(data.question, 'assistant');
+                } else if (data.action === 'schedule') {
+                    addMessage('任务已解析，正在生成日程...', 'assistant');
+                    await generateSchedule(data.task);
+                }
+            } catch (err) {
+                addMessage('错误: ' + err.message, 'assistant');
+            }
+        }
+
+        let currentView = 'list';
+        let scheduleData = [];
+        let selectedBlockIndex = null;
+
+        async function generateSchedule(task) {
+            try {
+                const res = await fetch(`${API_BASE}/api/schedule`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task, busy_events: [], work_window: ['09:00', '18:00'] })
+                });
+                const data = await res.json();
+                scheduleData = data.blocks;
+
+                document.getElementById('view-controls').style.display = 'block';
+                renderSchedule();
+            } catch (err) {
+                addMessage('生成日程失败: ' + err.message, 'assistant');
+            }
+        }
+
+        function renderSchedule() {
+            const scheduleDiv = document.getElementById('schedule');
+            scheduleDiv.innerHTML = '<h3>生成的日程：</h3>';
+
+            if (scheduleData.length === 0) {
+                scheduleDiv.innerHTML += '<p>无法在截止时间前安排任务</p>';
+                return;
+            }
+
+            if (currentView === 'list') {
+                renderListView(scheduleDiv);
+            } else if (currentView === 'card') {
+                renderCardView(scheduleDiv);
+            } else if (currentView === 'timeline') {
+                renderTimelineView(scheduleDiv);
+            }
+        }
+
+        function renderListView(container) {
+            const ul = document.createElement('ul');
+            ul.style.listStyle = 'none';
+            ul.style.padding = '0';
+
+            scheduleData.forEach((block, index) => {
+                const li = document.createElement('li');
+                li.className = 'block';
+                li.style.cursor = 'pointer';
+                li.onclick = () => showBlockDetails(index);
+                li.innerHTML = `
+                    <strong>${block.title}</strong><br>
+                    ${block.start} - ${block.end} (${block.duration_minutes}分钟)
+                `;
+                ul.appendChild(li);
+            });
+
+            container.appendChild(ul);
+        }
+
+        function renderCardView(container) {
+            const cardContainer = document.createElement('div');
+            cardContainer.className = 'card-container';
+
+            scheduleData.forEach((block, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.cursor = 'pointer';
+                card.onclick = () => showBlockDetails(index);
+                card.innerHTML = `
+                    <div class="card-title">${block.title}</div>
+                    <div class="card-time">开始: ${block.start}</div>
+                    <div class="card-time">结束: ${block.end}</div>
+                    <div class="card-time">时长: ${block.duration_minutes}分钟</div>
+                `;
+                cardContainer.appendChild(card);
+            });
+
+            container.appendChild(cardContainer);
+        }
+
+        function renderTimelineView(container) {
+            const timeline = document.createElement('div');
+            timeline.className = 'timeline';
+
+            // Header with hours
+            const header = document.createElement('div');
+            header.className = 'timeline-header';
+            header.innerHTML = '<div></div>';
+            for (let h = 0; h < 24; h++) {
+                header.innerHTML += `<div class="timeline-hour">${h}:00</div>`;
+            }
+            timeline.appendChild(header);
+
+            // Group blocks by date
+            const blocksByDate = {};
+            scheduleData.forEach(block => {
+                const date = block.start.split('T')[0];
+                if (!blocksByDate[date]) blocksByDate[date] = [];
+                blocksByDate[date].push(block);
+            });
+
+            // Render each date row
+            Object.keys(blocksByDate).sort().forEach(date => {
+                const row = document.createElement('div');
+                row.className = 'timeline-row';
+                row.innerHTML = `<div class="timeline-date">${date}</div>`;
+
+                blocksByDate[date].forEach((block) => {
+                    const globalIndex = scheduleData.indexOf(block);
+                    const startTime = new Date(block.start);
+                    const endTime = new Date(block.end);
+                    const startHour = startTime.getHours() + startTime.getMinutes() / 60;
+                    const duration = (endTime - startTime) / (1000 * 60 * 60);
+
+                    const blockDiv = document.createElement('div');
+                    blockDiv.className = 'timeline-block';
+                    blockDiv.style.cursor = 'pointer';
+                    blockDiv.onclick = () => showBlockDetails(globalIndex);
+                    const gridColumnStart = 2 + Math.floor(startHour);
+                    const gridColumnEnd = gridColumnStart + Math.ceil(duration);
+                    blockDiv.style.gridColumn = `${gridColumnStart} / ${gridColumnEnd}`;
+                    blockDiv.textContent = block.title;
+                    blockDiv.title = `${block.start} - ${block.end}`;
+
+                    row.appendChild(blockDiv);
+                });
+
+                timeline.appendChild(row);
+            });
+
+            container.appendChild(timeline);
+        }
+
+        function switchView(view) {
+            currentView = view;
+            document.querySelectorAll('#view-controls button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('btn-' + view).classList.add('active');
+            renderSchedule();
+        }
+
+        function showBlockDetails(index) {
+            selectedBlockIndex = index;
+            const block = scheduleData[index];
+
+            document.getElementById('modal-body').innerHTML = `
+                <p><strong>标题:</strong> ${block.title}</p>
+                <p><strong>开始:</strong> ${block.start}</p>
+                <p><strong>结束:</strong> ${block.end}</p>
+                <p><strong>时长:</strong> ${block.duration_minutes}分钟</p>
+            `;
+
+            document.getElementById('detail-modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('detail-modal').style.display = 'none';
+            selectedBlockIndex = null;
+        }
+
+        function deleteBlock() {
+            if (selectedBlockIndex === null) return;
+
+            if (confirm('确定要删除这个时间块吗？')) {
+                scheduleData.splice(selectedBlockIndex, 1);
+                closeModal();
+                renderSchedule();
+            }
+        }
+
+        document.getElementById('input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+
+    <div id="detail-modal" style="display:none;">
+        <div class="modal-overlay" onclick="closeModal()"></div>
+        <div class="modal-content">
+            <h3>时间块详情</h3>
+            <div id="modal-body"></div>
+            <div class="modal-actions">
+                <button onclick="deleteBlock()" class="btn-delete">删除</button>
+                <button onclick="closeModal()" class="btn-close">关闭</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
