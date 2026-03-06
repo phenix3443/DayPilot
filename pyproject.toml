@@ -10,6 +10,7 @@ python = "^3.11"
 prompt-collector = "^0.1.0"
 fastapi = "^0.116.1"
 uvicorn = {version = "^0.35.0", extras = ["standard"]}
+dateparser = "^1.2.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.2"
