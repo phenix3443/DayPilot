@@ -254,6 +254,16 @@
             selectedBlockIndex = null;
         }
 
+        function deleteBlock() {
+            if (selectedBlockIndex === null) return;
+
+            if (confirm('确定要删除这个时间块吗？')) {
+                scheduleData.splice(selectedBlockIndex, 1);
+                closeModal();
+                renderSchedule();
+            }
+        }
+
         document.getElementById('input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
         });
