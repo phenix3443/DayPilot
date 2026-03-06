@@ -16,6 +16,11 @@
         .block { background: #f0f0f0; padding: 8px; margin: 5px 0; border-radius: 4px; }
         #view-controls button { padding: 8px 15px; margin-right: 5px; }
         #view-controls button.active { background: #0066cc; color: white; }
+        .card-container { display: flex; flex-wrap: wrap; gap: 10px; }
+        .card { background: #f9f9f9; border: 1px solid #ddd; border-radius: 8px;
+                padding: 15px; width: 200px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card-title { font-weight: bold; margin-bottom: 8px; }
+        .card-time { color: #666; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -101,6 +106,8 @@
 
             if (currentView === 'list') {
                 renderListView(scheduleDiv);
+            } else if (currentView === 'card') {
+                renderCardView(scheduleDiv);
             }
         }
 
@@ -120,6 +127,32 @@
             });
 
             container.appendChild(ul);
+        }
+
+        function renderCardView(container) {
+            const cardContainer = document.createElement('div');
+            cardContainer.className = 'card-container';
+
+            scheduleData.forEach(block => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card-title">${block.title}</div>
+                    <div class="card-time">开始: ${block.start}</div>
+                    <div class="card-time">结束: ${block.end}</div>
+                    <div class="card-time">时长: ${block.duration_minutes}分钟</div>
+                `;
+                cardContainer.appendChild(card);
+            });
+
+            container.appendChild(cardContainer);
+        }
+
+        function switchView(view) {
+            currentView = view;
+            document.querySelectorAll('#view-controls button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('btn-' + view).classList.add('active');
+            renderSchedule();
         }
 
         document.getElementById('input').addEventListener('keypress', (e) => {
