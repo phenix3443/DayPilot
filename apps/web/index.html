@@ -21,6 +21,16 @@
                 padding: 15px; width: 200px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .card-title { font-weight: bold; margin-bottom: 8px; }
         .card-time { color: #666; font-size: 14px; }
+        .timeline { position: relative; margin-top: 20px; }
+        .timeline-header { display: grid; grid-template-columns: 80px repeat(24, 1fr);
+                           border-bottom: 2px solid #333; padding-bottom: 5px; }
+        .timeline-hour { text-align: center; font-size: 12px; }
+        .timeline-row { display: grid; grid-template-columns: 80px repeat(24, 1fr);
+                        min-height: 60px; border-bottom: 1px solid #eee; position: relative; }
+        .timeline-date { padding: 10px; font-weight: bold; }
+        .timeline-block { position: absolute; background: #4CAF50; color: white;
+                          padding: 5px; border-radius: 4px; font-size: 12px;
+                          overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -108,6 +118,8 @@
                 renderListView(scheduleDiv);
             } else if (currentView === 'card') {
                 renderCardView(scheduleDiv);
+            } else if (currentView === 'timeline') {
+                renderTimelineView(scheduleDiv);
             }
         }
 
@@ -146,6 +158,55 @@
             });
 
             container.appendChild(cardContainer);
+        }
+
+        function renderTimelineView(container) {
+            const timeline = document.createElement('div');
+            timeline.className = 'timeline';
+
+            // Header with hours
+            const header = document.createElement('div');
+            header.className = 'timeline-header';
+            header.innerHTML = '<div></div>';
+            for (let h = 0; h < 24; h++) {
+                header.innerHTML += `<div class="timeline-hour">${h}:00</div>`;
+            }
+            timeline.appendChild(header);
+
+            // Group blocks by date
+            const blocksByDate = {};
+            scheduleData.forEach(block => {
+                const date = block.start.split('T')[0];
+                if (!blocksByDate[date]) blocksByDate[date] = [];
+                blocksByDate[date].push(block);
+            });
+
+            // Render each date row
+            Object.keys(blocksByDate).sort().forEach(date => {
+                const row = document.createElement('div');
+                row.className = 'timeline-row';
+                row.innerHTML = `<div class="timeline-date">${date}</div>`;
+
+                blocksByDate[date].forEach(block => {
+                    const startTime = new Date(block.start);
+                    const endTime = new Date(block.end);
+                    const startHour = startTime.getHours() + startTime.getMinutes() / 60;
+                    const duration = (endTime - startTime) / (1000 * 60 * 60);
+
+                    const blockDiv = document.createElement('div');
+                    blockDiv.className = 'timeline-block';
+                    blockDiv.style.left = `${80 + (startHour / 24) * (100 - 80 / container.offsetWidth * 100)}%`;
+                    blockDiv.style.width = `${(duration / 24) * (100 - 80 / container.offsetWidth * 100)}%`;
+                    blockDiv.textContent = block.title;
+                    blockDiv.title = `${block.start} - ${block.end}`;
+
+                    row.appendChild(blockDiv);
+                });
+
+                timeline.appendChild(row);
+            });
+
+            container.appendChild(timeline);
         }
 
         function switchView(view) {
