@@ -12,4 +12,4 @@ class ParseResult(BaseModel):
     deadline: datetime | None = None
     duration_minutes: int | None = None
     priority: str = "normal"
-    missing_fields: list[str] = []
+    missing_fields: list[str] = Field(default_factory=list)
