@@ -69,10 +69,19 @@ def parse_task_text(text: str) -> ParseResult:
     if duration is None:
         missing_fields.append("duration_minutes")
 
+    # Auto-priority based on deadline urgency
+    priority = "normal"
+    if deadline is not None:
+        days_until = (deadline - datetime.now()).days
+        if days_until <= 1:
+            priority = "high"
+        elif days_until <= 3:
+            priority = "medium"
+
     return ParseResult(
         title=_extract_title(text),
         deadline=deadline,
         duration_minutes=duration if duration is not None else _DEFAULT_DURATION_MINUTES,
-        priority="normal",
+        priority=priority,
         missing_fields=missing_fields,
     )

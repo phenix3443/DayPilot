@@ -11,6 +11,7 @@ Max 2 clarification rounds, then fall back to defaults.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 
 from app.schemas.task_parse import ParseResult
 from app.services.task_parser import parse_task_text
@@ -60,7 +61,10 @@ def process_intake(session_id: str, text: str) -> IntakeResponse:
     missing = merged.missing_fields
 
     if not missing or state.rounds >= MAX_CLARIFY_ROUNDS:
-        # Done: schedule with whatever we have (defaults already set in parser)
+        # Apply defaults for still-missing required fields
+        if merged.deadline is None:
+            merged.deadline = datetime.now() + timedelta(days=1)
+
         _sessions.pop(session_id, None)
         return IntakeResponse(action="schedule", task=merged)
 
