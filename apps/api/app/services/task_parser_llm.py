@@ -41,13 +41,13 @@ def parse_task_text(text: str) -> ParseResult:
 
     try:
         client = _get_client()
-        response = client.responses.create(
-            model="gpt-5.1",
-            instructions="你是一个任务解析助手，从用户输入中提取任务信息。",
-            input=prompt,
+        response = client.chat.completions.create(
+            model="claude-sonnet-4-6",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
         )
 
-        result_text = response.output_text.strip()
+        result_text = response.choices[0].message.content.strip()
         # 移除可能的 markdown 代码块标记
         if result_text.startswith("```"):
             result_text = result_text.split("\n", 1)[1].rsplit("\n", 1)[0]
