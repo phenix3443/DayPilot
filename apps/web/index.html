@@ -37,6 +37,8 @@
         .modal-content { position: relative; background: white; margin: 100px auto;
                          padding: 20px; width: 400px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
         .modal-actions { margin-top: 20px; text-align: right; }
+        .btn-save { background: #28a745; color: white; padding: 8px 15px; border: none;
+                    border-radius: 4px; cursor: pointer; margin-right: 10px; }
         .btn-delete { background: #dc3545; color: white; padding: 8px 15px; border: none;
                       border-radius: 4px; cursor: pointer; margin-right: 10px; }
         .btn-close { background: #6c757d; color: white; padding: 8px 15px; border: none;
@@ -244,10 +246,15 @@
             const block = scheduleData[index];
 
             document.getElementById('modal-body').innerHTML = `
-                <p><strong>标题:</strong> ${block.title}</p>
-                <p><strong>开始:</strong> ${block.start}</p>
-                <p><strong>结束:</strong> ${block.end}</p>
-                <p><strong>时长:</strong> ${block.duration_minutes}分钟</p>
+                <div>
+                    <label>标题: <input type="text" id="edit-title" value="${block.title}" style="width:100%;padding:5px;"></label>
+                </div>
+                <div style="margin-top:10px;">
+                    <label>开始: <input type="datetime-local" id="edit-start" value="${block.start.slice(0,16)}" style="width:100%;padding:5px;"></label>
+                </div>
+                <div style="margin-top:10px;">
+                    <label>结束: <input type="datetime-local" id="edit-end" value="${block.end.slice(0,16)}" style="width:100%;padding:5px;"></label>
+                </div>
             `;
 
             document.getElementById('detail-modal').style.display = 'block';
@@ -308,6 +315,7 @@
             <h3>时间块详情</h3>
             <div id="modal-body"></div>
             <div class="modal-actions">
+                <button onclick="saveBlock()" class="btn-save">保存</button>
                 <button onclick="deleteBlock()" class="btn-delete">删除</button>
                 <button onclick="closeModal()" class="btn-close">关闭</button>
             </div>
