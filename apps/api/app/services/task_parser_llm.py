@@ -12,7 +12,7 @@ def _get_client():
     api_key = os.getenv("DEEPSEEK_API_KEY")
     if not api_key:
         raise ValueError("DEEPSEEK_API_KEY not set in environment")
-    return OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
+    return OpenAI(api_key=api_key, base_url="https://api.skyapi.org/v1")
 
 
 def parse_task_text(text: str) -> ParseResult:
@@ -41,13 +41,13 @@ def parse_task_text(text: str) -> ParseResult:
 
     try:
         client = _get_client()
-        response = client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0,
+        response = client.responses.create(
+            model="gpt-5.1",
+            instructions="你是一个任务解析助手，从用户输入中提取任务信息。",
+            input=prompt,
         )
 
-        result_text = response.choices[0].message.content.strip()
+        result_text = response.output_text.strip()
         # 移除可能的 markdown 代码块标记
         if result_text.startswith("```"):
             result_text = result_text.split("\n", 1)[1].rsplit("\n", 1)[0]
