@@ -275,6 +275,23 @@
             }
         }
 
+        function saveBlock() {
+            if (selectedBlockIndex === null) return;
+
+            const title = document.getElementById('edit-title').value;
+            const start = document.getElementById('edit-start').value;
+            const end = document.getElementById('edit-end').value;
+
+            const block = scheduleData[selectedBlockIndex];
+            block.title = title;
+            block.start = new Date(start).toISOString();
+            block.end = new Date(end).toISOString();
+            block.duration_minutes = Math.round((new Date(end) - new Date(start)) / 60000);
+
+            closeModal();
+            renderSchedule();
+        }
+
         let draggedBlockIndex = null;
 
         function handleDragStart(e, index) {
