@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "daypilot"
+version = "0.1.0"
+description = ""
+authors = ["phenix3443 <phenix3443@gmail.com>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+prompt-collector = "^0.1.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
