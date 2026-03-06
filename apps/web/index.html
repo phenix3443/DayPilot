@@ -97,6 +97,7 @@
 
         let currentView = 'list';
         let scheduleData = [];
+        let selectedBlockIndex = null;
 
         async function generateSchedule(task) {
             try {
@@ -138,9 +139,11 @@
             ul.style.listStyle = 'none';
             ul.style.padding = '0';
 
-            scheduleData.forEach(block => {
+            scheduleData.forEach((block, index) => {
                 const li = document.createElement('li');
                 li.className = 'block';
+                li.style.cursor = 'pointer';
+                li.onclick = () => showBlockDetails(index);
                 li.innerHTML = `
                     <strong>${block.title}</strong><br>
                     ${block.start} - ${block.end} (${block.duration_minutes}分钟)
@@ -155,9 +158,11 @@
             const cardContainer = document.createElement('div');
             cardContainer.className = 'card-container';
 
-            scheduleData.forEach(block => {
+            scheduleData.forEach((block, index) => {
                 const card = document.createElement('div');
                 card.className = 'card';
+                card.style.cursor = 'pointer';
+                card.onclick = () => showBlockDetails(index);
                 card.innerHTML = `
                     <div class="card-title">${block.title}</div>
                     <div class="card-time">开始: ${block.start}</div>
@@ -197,7 +202,8 @@
                 row.className = 'timeline-row';
                 row.innerHTML = `<div class="timeline-date">${date}</div>`;
 
-                blocksByDate[date].forEach(block => {
+                blocksByDate[date].forEach((block) => {
+                    const globalIndex = scheduleData.indexOf(block);
                     const startTime = new Date(block.start);
                     const endTime = new Date(block.end);
                     const startHour = startTime.getHours() + startTime.getMinutes() / 60;
@@ -205,6 +211,8 @@
 
                     const blockDiv = document.createElement('div');
                     blockDiv.className = 'timeline-block';
+                    blockDiv.style.cursor = 'pointer';
+                    blockDiv.onclick = () => showBlockDetails(globalIndex);
                     const gridColumnStart = 2 + Math.floor(startHour);
                     const gridColumnEnd = gridColumnStart + Math.ceil(duration);
                     blockDiv.style.gridColumn = `${gridColumnStart} / ${gridColumnEnd}`;
