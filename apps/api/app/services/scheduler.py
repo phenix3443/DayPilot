@@ -20,6 +20,10 @@ def schedule_task(task: dict, busy_events: list[dict], work_window: tuple[str, s
     deadline = _parse_dt(task["deadline"])
     title = task.get("title", "Task")
 
+    # 如果截止时间已过，无法排程
+    if deadline <= datetime.now(deadline.tzinfo):
+        return []
+
     ws_h, ws_m = map(int, work_window[0].split(":"))
     we_h, we_m = map(int, work_window[1].split(":"))
 
