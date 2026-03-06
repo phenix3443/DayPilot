@@ -14,6 +14,8 @@
         button { padding: 8px 15px; }
         #schedule { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 15px; }
         .block { background: #f0f0f0; padding: 8px; margin: 5px 0; border-radius: 4px; }
+        #view-controls button { padding: 8px 15px; margin-right: 5px; }
+        #view-controls button.active { background: #0066cc; color: white; }
     </style>
 </head>
 <body>
@@ -21,6 +23,11 @@
     <div id="chat"></div>
     <input type="text" id="input" placeholder="输入任务，例如：周五前完成PPT，大概3小时">
     <button onclick="sendMessage()">发送</button>
+    <div id="view-controls" style="display:none; margin-top: 20px;">
+        <button onclick="switchView('timeline')" id="btn-timeline">时间轴</button>
+        <button onclick="switchView('list')" id="btn-list" class="active">列表</button>
+        <button onclick="switchView('card')" id="btn-card">卡片</button>
+    </div>
     <div id="schedule"></div>
 
     <script>
