@@ -201,6 +201,8 @@
                 const row = document.createElement('div');
                 row.className = 'timeline-row';
                 row.innerHTML = `<div class="timeline-date">${date}</div>`;
+                row.ondragover = (e) => e.preventDefault();
+                row.ondrop = (e) => handleDrop(e, date);
 
                 blocksByDate[date].forEach((block) => {
                     const globalIndex = scheduleData.indexOf(block);
@@ -213,6 +215,8 @@
                     blockDiv.className = 'timeline-block';
                     blockDiv.style.cursor = 'pointer';
                     blockDiv.onclick = () => showBlockDetails(globalIndex);
+                    blockDiv.draggable = true;
+                    blockDiv.ondragstart = (e) => handleDragStart(e, globalIndex);
                     const gridColumnStart = 2 + Math.floor(startHour);
                     const gridColumnEnd = gridColumnStart + Math.ceil(duration);
                     blockDiv.style.gridColumn = `${gridColumnStart} / ${gridColumnEnd}`;
@@ -262,6 +266,13 @@
                 closeModal();
                 renderSchedule();
             }
+        }
+
+        let draggedBlockIndex = null;
+
+        function handleDragStart(e, index) {
+            draggedBlockIndex = index;
+            e.dataTransfer.effectAllowed = 'move';
         }
 
         document.getElementById('input').addEventListener('keypress', (e) => {
