@@ -275,6 +275,28 @@
             e.dataTransfer.effectAllowed = 'move';
         }
 
+        function handleDrop(e, targetDate) {
+            e.preventDefault();
+            if (draggedBlockIndex === null) return;
+
+            const block = scheduleData[draggedBlockIndex];
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = e.clientX - rect.left - 80;
+            const hourWidth = (rect.width - 80) / 24;
+            const newHour = Math.floor(x / hourWidth);
+
+            const oldStart = new Date(block.start);
+            const duration = block.duration_minutes;
+            const newStart = new Date(targetDate + 'T' + String(newHour).padStart(2, '0') + ':00:00');
+            const newEnd = new Date(newStart.getTime() + duration * 60000);
+
+            block.start = newStart.toISOString();
+            block.end = newEnd.toISOString();
+
+            draggedBlockIndex = null;
+            renderSchedule();
+        }
+
         document.getElementById('input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
         });
